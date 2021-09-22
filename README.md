@@ -10,6 +10,8 @@ Here is a birds-eye view of the architecture that this repo deploys.
 
 ![architecture](./img/architecture.jpeg)
 
+Please not that **this repo uses the _standard_ version of the _Step Functions_. One might swap to the _express_ version without much trouble**.
+
 ## Deployment
 
 This repo uses _AWS CDK_ as the IaC tool. To deploy the infrastructure:
@@ -35,45 +37,28 @@ This repo uses _AWS CDK_ as the IaC tool. To deploy the infrastructure:
 
 ## Learnings
 
-- The CFN will not show you that APIGW Integration drifted as this resource is not "drift-enabled"
+- If you are not sure how the resource is structured and cannot export it (like in the case of APIGW v2, where the API definition cannot be exported), look into the network tab. You will most likely find useful resource information there.
 
-- If you are not sure how the resource is structured and you are not able to export it (like in the case of APIGW v2 where the API definition cannot be exported), look into network tab. You will most likely find useful resource information there.
+* The _data mapping_ mechanism for various request parameters for the integration is very similar to the one you do while working with _APIGW Rest APIs_. First, you must enable the parameters you want to map using on the **route** level when you can map them on the **integration** level.
+  Note that the **semantics of enabling the parameters are different**.
+  Here, we enable a given parameter by specifying `Required: true | false` on that parameter.
 
-- Similarly to how the _APIGW Mock Integration_ works, first you have to allow for parameters within the _route_ resource,
-  then you can specify the mapping within the _integration_ resource.
+- [The data mapping documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-data-mapping.html) lists various _data mapping expressions_ but the examples show only a small subsection of all possible mappings.
+  According to the _CloudFormation_, only the `method.request.querystring | path | header` mapping is available in the _WebSocket_ context.
 
-- It seems like some _integration request data mapping expressions_ are not working? At least I could not get them to work.
-  According to [this documentation page](https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-data-mapping.html) I should be able to use all of the mapping expressions.
-
-  - Only the `request.querystring` and the `request.header` were working.
-  - The attached example, while helpful, does not show all possible cases.
-  - The `RequestParameters` parameter in CFN seems to confirm that only `querystring`, `path` and `header` are allowed.
-
-- For the WebSockets + _non-proxy_ integration, we cannot pass the `StateMachineArn` and the `Input` parameters just like we would in the case of
-  a PROXY integration.
-
-- I was able to make the `$connect` route work by **specifying the `integration`, `integrationResponse` and the `routeResponse`**.
-  **Keep in mind that the `integrationResponse` will not show in the AWS console**.
-
-- The `templateSelectionExpression` is an expression that will dictate which of the `requestTemplate` is picked upon a request / response.
-  The `\\$default` is a _catch-all_ and will evaluate to a `requestTemplate` with a key of `$default`.
-  This whole mechanism is very similar to creating a _MOCK_ type integration via APIGW. It allows you to create responses based on the integration response.
-
-- There is **no easy way to configure _access logs_ / _execution logs_ for the APIGW v2**. You have to drill into L1 resources and monkey-patch properties.
-
-- Remember about the **_State Machine_ type**. I just wasted about 5 hours of trying various configuration only to notice that I've tried using the
-  `StartSyncExecution` API call on state machine that is of type _STANDARD_.
-
-- Sadly we cannot invoke given service endpoint directly using _Step Functions_.
-  We can invoke the APIGW via the endpoint but the endpoint is validated. You cannot cheat the system :C
-
-  As alternative, you can create an APIGW endpoint that invokes the service you are interested directly.
-  While not really cost efficient, it should get the job done.
-
-- How do you debug routes and responses?
-
-  - If you are integrating with other AWS service, you might want to get response from the service API. With a static response template this is impossible to do.
-  - **To forward the response from the service API, specify the `integrationResponseKey` as `$default` but DO NOT specify the response template**.
+* Since the _APIGW WebSockets_ does not support the `IntegrationSubtype` _CloudFormation_ property, we need to use the _AWS_ integration type. This integration type works a bit differently than the _AWS_PROXY_ one.
+  Instead of specifying the payload of the service call within the `RequestParameters` property, you will need to encode all of them within the `RequestTemplate`. **Be mindful about the `TemplateSelectionExpression` property as it dictates which `RequestTemplate` will be used for a given request**.
 
 - When using **_direct service integrations_** be **mindful of headers that the service call expects**.
   Sometimes you have to specify the `X-Amz-Target`, sometimes it's the path that dictates the routing.
+
+* The `TemplateSelectionExpression` is an expression that will dictate which of the `requestTemplate` is picked upon a request/response.
+  The `\\$default` is a _catch-all_ and will evaluate to a `requestTemplate` with a `$default` key.
+  This whole mechanism is very similar to creating a _MOCK_ type integration via APIGW. It allows you to develop responses based on the integration response.
+
+- I made the `$connect` route work by **specifying the `Integration`, `IntegrationResponse`, and the `RouteResponse`**.
+  **Keep in mind that the `IntegrationResponse` will not show in the AWS console**.
+
+* There is **no easy way to configure _access logs_ / _execution logs_ for the APIGW v2**. You have to drill into L1 resources and monkey-patch properties.
+
+- To invoke a given service operation directly, create a _REST APIGW_ and use direct integration. Then hook the newly created _APIGW_ to the state machine you are working with. Sadly I would not classify this method of creating an integration as very cost efficient.
