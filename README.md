@@ -35,6 +35,8 @@ This repo uses _AWS CDK_ as the IaC tool. To deploy the infrastructure:
 
 4. Whenever an event is pushed to the _EventBridge_ bus created by this construct the event payload will be matched against the _pattern_ specified in the previous step. If the payload matches the _pattern_, the event payload will be sent to your _WebSocket_ connection.
 
+5. The `pattern` action type can be sent multiple times. Each time the `pattern` action is invoked, the payload specified in the previous `pattern` action will be overwritten.
+
 ## Learnings
 
 - If you are not sure how the resource is structured and cannot export it (like in the case of APIGW v2, where the API definition cannot be exported), look into the network tab. You will most likely find useful resource information there.
