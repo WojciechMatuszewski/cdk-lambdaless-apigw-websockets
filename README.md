@@ -1,6 +1,6 @@
-# Lambda-less AWS API Gateway WebSockets
+# "Lambdaless" AWS API Gateway WebSockets
 
-Inspired by [this construct](https://github.com/boyney123/cdk-eventbridge-socket), I've decided to replicate it but put my little twist on the architecture - make it Lambda-less.
+Inspired by [this construct](https://github.com/boyney123/cdk-eventbridge-socket), I've decided to replicate it but put my little twist on the architecture - make it "Lambdaless".
 
 Why? Mainly for learning purposes. I've only consumed the _WebSockets_ part of the AWS API Gateway via Lambdas so far.
 
