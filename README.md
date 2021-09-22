@@ -20,6 +20,19 @@ This repo uses _AWS CDK_ as the IaC tool. To deploy the infrastructure:
 
 ## Usage
 
+1. Copy the `webSocketAPIurl` from the deployment outputs.
+2. Connect to the `webSocketAPIurl`. There are many tools available to you to do that. One might use [`websocat`](https://github.com/vi/websocat) or [`Postman`](https://learning.postman.com/docs/sending-requests/supported-api-frameworks/websocket/)
+3. Specify the pattern you want to filter the _EventBridge_ events on. This is done by sending a message with a `pattern` property.
+   The `pattern` property corresponds to the (_EventBridge event pattern_)[https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html]
+
+   Here is an example of a _catch-all_ event pattern.
+
+```json
+{ "action": "pattern", "pattern": { "version": ["0"] } }
+```
+
+4. Whenever an event is pushed to the _EventBridge_ bus created by this construct the event payload will be matched against the _pattern_ specified in the previous step. If the payload matches the _pattern_, the event payload will be sent to your _WebSocket_ connection.
+
 ## Learnings
 
 - The CFN will not show you that APIGW Integration drifted as this resource is not "drift-enabled"

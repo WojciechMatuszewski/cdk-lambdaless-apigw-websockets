@@ -6,7 +6,7 @@ import { EventBus } from "./event-bus";
 import { TestEventPatternAPI } from "./test-event-pattern-api";
 import { WebSocketAPI } from "./websocket-api";
 
-export class EbEventsWsStack extends cdk.Stack {
+export class LambdaLessWebSocketsStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
